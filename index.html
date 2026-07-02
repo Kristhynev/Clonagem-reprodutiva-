@@ -1,0 +1,1175 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Clonagem Reprodutiva — Ciência, Ética e os Limites da Criação da Vida</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Cinzel:wght@400;700;900&family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;1,300;1,400&family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;700&display=swap');
+
+/* ===== TOKENS ===== */
+:root{
+  --black:   #060809;
+  --dark1:   #0d1012;
+  --dark2:   #141a1d;
+  --dark3:   #1c2428;
+  --em:      #00ff88;
+  --em-dim:  #00b860;
+  --em-mute: rgba(0,255,136,0.12);
+  --violet:  #8b45f5;
+  --vio-mute:rgba(139,69,245,0.15);
+  --red:     #ff4466;
+  --white:   #eef2f0;
+  --grey1:   #9eaaa5;
+  --grey2:   #687570;
+  --line:    rgba(0,255,136,0.14);
+  --glass-bg:rgba(255,255,255,0.032);
+  --glass-border:rgba(0,255,136,0.18);
+  --font-title:'Cinzel',serif;
+  --font-quote:'Cormorant Garamond',serif;
+  --font-body:'Inter',sans-serif;
+  --font-mono:'JetBrains Mono',monospace;
+  --slide-pad: clamp(28px,6vw,80px) clamp(20px,8vw,100px);
+  --r: 10px;
+}
+
+*{margin:0;padding:0;box-sizing:border-box;}
+html{font-size:16px;}
+body{
+  width:100vw;height:100vh;overflow:hidden;
+  background:var(--black);
+  font-family:var(--font-body);
+  color:var(--white);
+  cursor:default;
+}
+
+/* ===== AMBIENT BG ===== */
+#ambient{position:fixed;inset:0;z-index:0;pointer-events:none;}
+.amb-grad{
+  position:absolute;inset:0;
+  background:
+    radial-gradient(ellipse 160% 90% at 50% -20%, rgba(139,69,245,0.13) 0%, transparent 55%),
+    radial-gradient(ellipse 120% 70% at 10% 110%, rgba(0,255,136,0.07) 0%, transparent 50%),
+    radial-gradient(ellipse 80% 60% at 90% 80%, rgba(0,200,100,0.05) 0%, transparent 45%),
+    linear-gradient(175deg, #08090b 0%, #0c1115 40%, #060809 100%);
+}
+.scanlines{
+  position:absolute;inset:0;opacity:0.03;
+  background:repeating-linear-gradient(0deg,transparent,transparent 2px,rgba(0,0,0,0.8) 2px,rgba(0,0,0,0.8) 4px);
+}
+.vignette{
+  position:absolute;inset:0;
+  background:radial-gradient(ellipse 80% 80% at 50% 50%, transparent 50%, rgba(0,0,0,0.82) 100%);
+}
+.noise{
+  position:absolute;inset:0;opacity:0.04;
+  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='200' height='200'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+}
+
+/* fog layers */
+.fog{position:absolute;pointer-events:none;width:200%;height:40%;left:-50%;filter:blur(40px);opacity:0.06;}
+.fog.f1{top:10%;background:radial-gradient(ellipse,rgba(0,255,136,0.5),transparent 70%);animation:fog-drift 60s linear infinite;}
+.fog.f2{top:60%;background:radial-gradient(ellipse,rgba(139,69,245,0.4),transparent 70%);animation:fog-drift 80s linear infinite reverse;}
+@keyframes fog-drift{0%{transform:translateX(-10%);}50%{transform:translateX(10%);}100%{transform:translateX(-10%);}}
+
+/* lightning overlay */
+#lightning{position:fixed;inset:0;z-index:99;pointer-events:none;opacity:0;}
+#lightning.zap{animation:zap-seq 0.65s ease-out forwards;}
+@keyframes zap-seq{
+  0%{opacity:0;background:transparent;}
+  5%{opacity:1;background:rgba(200,255,230,0.55);}
+  15%{opacity:0;background:transparent;}
+  25%{opacity:0.8;background:rgba(200,255,230,0.35);}
+  35%{opacity:0;}
+}
+
+/* particles */
+.spark{
+  position:fixed;bottom:-8px;border-radius:50%;pointer-events:none;z-index:2;
+  animation:spark-rise linear forwards;
+}
+@keyframes spark-rise{
+  0%{opacity:0;transform:translateY(0) translateX(0) scale(0.4);}
+  15%{opacity:0.8;}
+  85%{opacity:0.4;}
+  100%{opacity:0;transform:translateY(-100vh) translateX(var(--drift)) scale(0);}
+}
+
+/* ===== PROGRESS BAR ===== */
+#progress{position:fixed;top:0;left:0;z-index:200;height:3px;width:0%;background:linear-gradient(90deg,var(--violet),var(--em));box-shadow:0 0 12px rgba(0,255,136,0.7);transition:width 0.55s cubic-bezier(.4,0,.2,1);}
+#progress::after{content:'';position:absolute;right:0;top:-2px;width:8px;height:7px;border-radius:50%;background:var(--em);box-shadow:0 0 12px 3px var(--em);}
+
+/* ===== HEADER BAR ===== */
+#topbar{
+  position:fixed;top:0;left:0;right:0;z-index:150;
+  display:flex;align-items:center;justify-content:space-between;
+  padding:14px 24px 0;
+  pointer-events:none;
+}
+.tb-brand{font-family:var(--font-mono);font-size:0.62rem;letter-spacing:0.28em;color:var(--grey2);text-transform:uppercase;}
+.tb-brand span{color:var(--em);}
+.tb-slide-name{font-family:var(--font-mono);font-size:0.62rem;letter-spacing:0.12em;color:var(--grey2);}
+
+/* ===== SIDE DOTS ===== */
+#dots{
+  position:fixed;right:20px;top:50%;transform:translateY(-50%);
+  z-index:150;display:flex;flex-direction:column;gap:9px;
+}
+.dot{
+  width:5px;height:5px;border-radius:999px;
+  background:rgba(255,255,255,0.18);
+  cursor:pointer;transition:all 0.35s cubic-bezier(.4,0,.2,1);
+  position:relative;
+}
+.dot:hover{background:var(--em);box-shadow:0 0 8px rgba(0,255,136,0.6);}
+.dot.on{background:var(--em);height:20px;box-shadow:0 0 12px rgba(0,255,136,0.8);}
+.dot-tip{
+  position:absolute;right:16px;top:50%;transform:translateY(-50%);
+  background:rgba(10,16,18,0.9);border:1px solid var(--glass-border);
+  color:var(--em);font-family:var(--font-mono);font-size:0.65rem;
+  white-space:nowrap;padding:4px 10px;border-radius:4px;
+  opacity:0;pointer-events:none;transition:opacity 0.2s;
+}
+.dot:hover .dot-tip{opacity:1;}
+
+/* ===== BOTTOM NAV ===== */
+#nav{
+  position:fixed;bottom:24px;left:0;right:0;z-index:150;
+  display:flex;align-items:center;justify-content:center;gap:18px;
+}
+.nbtn{
+  width:44px;height:44px;border-radius:50%;
+  border:1px solid rgba(0,255,136,0.25);
+  background:rgba(8,12,14,0.7);backdrop-filter:blur(12px);
+  color:var(--em);font-size:1rem;
+  display:flex;align-items:center;justify-content:center;
+  cursor:pointer;transition:all 0.2s;
+  font-family:var(--font-body);
+}
+.nbtn:hover{background:rgba(0,255,136,0.1);box-shadow:0 0 20px rgba(0,255,136,0.4);transform:scale(1.08);}
+.nbtn:active{transform:scale(0.93);}
+.nbtn:disabled{opacity:0.2;pointer-events:none;}
+#ctr{
+  font-family:var(--font-mono);font-size:0.78rem;
+  color:var(--grey1);min-width:70px;text-align:center;letter-spacing:0.08em;
+}
+#ctr b{color:var(--em);}
+#key-hint{
+  position:fixed;bottom:26px;right:24px;z-index:150;
+  font-family:var(--font-mono);font-size:0.62rem;color:var(--grey2);letter-spacing:0.08em;
+  opacity:0.7;
+}
+
+/* ===== SLIDE ENGINE ===== */
+#deck{position:fixed;inset:0;z-index:10;}
+.slide{
+  position:absolute;inset:0;overflow:hidden;
+  display:flex;flex-direction:column;justify-content:center;
+  padding:var(--slide-pad);
+  padding-top:calc(clamp(28px,6vw,80px) + 44px);
+  padding-bottom:calc(clamp(28px,6vw,80px) + 64px);
+  visibility:hidden;pointer-events:none;
+  will-change:transform,opacity;
+}
+/* transition states */
+.slide.s-enter-from{opacity:0;transform:translateY(32px) scale(0.97);}
+.slide.s-enter-active{visibility:visible;pointer-events:auto;opacity:1;transform:none;transition:opacity 0.65s cubic-bezier(.4,0,.2,1),transform 0.65s cubic-bezier(.4,0,.2,1);}
+.slide.s-leave-from{opacity:1;transform:none;}
+.slide.s-leave-active{opacity:0;transform:translateY(-20px) scale(1.02);transition:opacity 0.45s cubic-bezier(.4,0,.2,1),transform 0.45s cubic-bezier(.4,0,.2,1);}
+
+/* ===== TYPOGRAPHY ===== */
+.eyebrow{
+  font-family:var(--font-mono);font-size:clamp(0.62rem,1vw,0.75rem);
+  letter-spacing:0.3em;text-transform:uppercase;color:var(--em);
+  margin-bottom:clamp(10px,2vh,20px);
+  display:flex;align-items:center;gap:12px;
+  opacity:0;animation:fade-in 0.6s 0.15s ease both;
+}
+.eyebrow::before{content:'';width:24px;height:1px;background:var(--em);opacity:0.6;}
+
+h1.t{
+  font-family:var(--font-title);
+  font-size:clamp(1.6rem,3.5vw,3.2rem);
+  font-weight:900;line-height:1.12;
+  color:var(--white);letter-spacing:0.01em;
+  text-shadow:0 0 40px rgba(0,255,136,0.15);
+  margin-bottom:clamp(12px,2.5vh,28px);
+  opacity:0;animation:slide-up 0.7s 0.25s cubic-bezier(.4,0,.2,1) both;
+}
+h1.t em{font-style:normal;color:var(--em);}
+h1.t .vio{font-style:normal;color:var(--violet);}
+
+.sub{
+  font-family:var(--font-quote);font-style:italic;
+  font-size:clamp(1rem,1.5vw,1.4rem);
+  color:var(--grey1);line-height:1.55;max-width:700px;
+  opacity:0;animation:slide-up 0.7s 0.35s cubic-bezier(.4,0,.2,1) both;
+}
+.body-wrap{
+  opacity:0;animation:slide-up 0.7s 0.4s cubic-bezier(.4,0,.2,1) both;
+}
+
+@keyframes slide-up{from{opacity:0;transform:translateY(20px);}to{opacity:1;transform:none;}}
+@keyframes fade-in{from{opacity:0;}to{opacity:1;}}
+
+/* ===== CONTENT LAYOUTS ===== */
+.two-col{display:flex;gap:clamp(20px,4vw,60px);align-items:flex-start;width:100%;max-width:1200px;}
+.two-col>.c{flex:1;min-width:0;}
+.two-col>.c.wide{flex:1.4;}
+.two-col>.c.narrow{flex:0.7;}
+
+p.lead{
+  font-size:clamp(0.9rem,1.2vw,1.1rem);line-height:1.78;
+  color:#ccd4d0;max-width:640px;margin-bottom:1rem;
+}
+p.lead strong{color:var(--em);font-weight:600;}
+p.lead em{font-style:italic;color:var(--grey1);}
+
+/* ===== GLASS CARD ===== */
+.card{
+  background:var(--glass-bg);
+  border:1px solid var(--glass-border);
+  border-radius:var(--r);
+  padding:clamp(16px,2.5vw,28px);
+  backdrop-filter:blur(16px);
+  box-shadow:0 8px 32px rgba(0,0,0,0.35), inset 0 1px 0 rgba(255,255,255,0.04);
+  margin-bottom:14px;
+  transition:border-color 0.3s,box-shadow 0.3s;
+}
+.card:hover{border-color:rgba(0,255,136,0.38);box-shadow:0 8px 32px rgba(0,0,0,0.35),0 0 24px rgba(0,255,136,0.08), inset 0 1px 0 rgba(255,255,255,0.04);}
+.card-label{
+  font-family:var(--font-mono);font-size:0.72rem;letter-spacing:0.18em;
+  text-transform:uppercase;color:var(--em);display:block;margin-bottom:8px;
+}
+.card p{font-size:clamp(0.82rem,1vw,0.96rem);color:#ccd4d0;line-height:1.65;}
+
+/* ===== FACT LIST ===== */
+.facts{list-style:none;display:flex;flex-direction:column;gap:0;}
+.facts li{
+  position:relative;padding:clamp(10px,1.5vh,16px) 0 clamp(10px,1.5vh,16px) 20px;
+  border-bottom:1px solid rgba(255,255,255,0.05);
+  font-size:clamp(0.84rem,1vw,0.96rem);color:#ccd4d0;line-height:1.6;
+}
+.facts li:last-child{border-bottom:none;}
+.facts li::before{
+  content:'';position:absolute;left:0;top:50%;transform:translateY(-50%);
+  width:6px;height:6px;border-radius:50%;
+  background:var(--em);box-shadow:0 0 8px rgba(0,255,136,0.7);
+}
+.facts li strong{color:var(--em);font-weight:600;}
+.facts li .note{display:block;font-size:0.82rem;color:var(--grey1);margin-top:3px;}
+
+/* ===== STEP PROCESS ===== */
+.steps{display:flex;flex-direction:column;gap:0;width:100%;max-width:800px;}
+.step{
+  display:grid;grid-template-columns:52px 1fr;gap:0;
+  position:relative;
+}
+.step::after{
+  content:'';position:absolute;left:25px;top:58px;bottom:0;
+  width:1px;background:linear-gradient(180deg,rgba(0,255,136,0.3),transparent);
+}
+.step:last-child::after{display:none;}
+.step-n{
+  width:44px;height:44px;border-radius:50%;
+  border:1px solid var(--glass-border);
+  background:var(--glass-bg);
+  display:flex;align-items:center;justify-content:center;
+  font-family:var(--font-mono);font-size:0.82rem;color:var(--em);
+  flex-shrink:0;margin-top:4px;
+  box-shadow:0 0 12px rgba(0,255,136,0.12);
+}
+.step-body{padding:4px 0 28px 20px;}
+.step-body strong{display:block;font-size:clamp(0.92rem,1.1vw,1.05rem);color:var(--white);font-weight:600;margin-bottom:5px;}
+.step-body p{font-size:clamp(0.8rem,0.95vw,0.92rem);color:var(--grey1);line-height:1.65;}
+.step-body .tag{
+  display:inline-block;font-family:var(--font-mono);font-size:0.7rem;
+  background:var(--em-mute);color:var(--em);
+  padding:2px 8px;border-radius:3px;margin-top:6px;letter-spacing:0.05em;
+}
+
+/* ===== TIMELINE ===== */
+.timeline{position:relative;padding-left:clamp(20px,3vw,36px);}
+.timeline::before{content:'';position:absolute;left:7px;top:8px;bottom:8px;width:1px;background:linear-gradient(180deg,var(--em),var(--violet),transparent);}
+.tl{position:relative;padding:0 0 clamp(16px,2.5vh,26px) clamp(20px,2.5vw,30px);}
+.tl:last-child{padding-bottom:0;}
+.tl::before{
+  content:'';position:absolute;left:0;top:7px;
+  transform:translateX(-50%);
+  width:11px;height:11px;border-radius:50%;
+  background:var(--em);box-shadow:0 0 14px rgba(0,255,136,0.8);
+  border:2px solid var(--dark1);
+}
+.tl-year{font-family:var(--font-mono);font-size:0.75rem;color:var(--em);letter-spacing:0.08em;display:block;margin-bottom:4px;}
+.tl h4{font-family:var(--font-title);font-size:clamp(0.9rem,1.1vw,1.05rem);color:var(--white);margin-bottom:4px;font-weight:600;}
+.tl p{font-size:clamp(0.8rem,0.95vw,0.9rem);color:var(--grey1);line-height:1.6;max-width:500px;}
+
+/* ===== INTERACTIVE STAT CARDS ===== */
+.stat-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:14px;width:100%;max-width:900px;}
+.stat{
+  background:var(--glass-bg);border:1px solid var(--glass-border);
+  border-radius:var(--r);padding:clamp(14px,2vw,22px);
+  text-align:center;cursor:default;
+  transition:all 0.3s cubic-bezier(.4,0,.2,1);
+  position:relative;overflow:hidden;
+}
+.stat::before{
+  content:'';position:absolute;inset:0;
+  background:radial-gradient(ellipse at 50% 0%, rgba(0,255,136,0.08), transparent 70%);
+  opacity:0;transition:opacity 0.3s;
+}
+.stat:hover{border-color:rgba(0,255,136,0.45);transform:translateY(-4px);box-shadow:0 16px 40px rgba(0,0,0,0.4),0 0 30px rgba(0,255,136,0.1);}
+.stat:hover::before{opacity:1;}
+.stat-val{font-family:var(--font-title);font-size:clamp(1.6rem,3vw,2.8rem);color:var(--em);font-weight:900;line-height:1;display:block;margin-bottom:6px;}
+.stat-label{font-family:var(--font-mono);font-size:0.68rem;color:var(--grey1);text-transform:uppercase;letter-spacing:0.1em;line-height:1.4;}
+
+/* ===== COMPARISON (pros/cons) ===== */
+.compare{display:grid;grid-template-columns:1fr 1fr;gap:clamp(12px,2vw,24px);width:100%;max-width:1000px;}
+.compare-col .col-head{
+  font-family:var(--font-mono);font-size:0.72rem;letter-spacing:0.2em;
+  text-transform:uppercase;padding:10px 16px;border-radius:var(--r) var(--r) 0 0;
+  margin-bottom:0;
+}
+.compare-col.pos .col-head{background:rgba(0,255,136,0.12);color:var(--em);border:1px solid rgba(0,255,136,0.22);border-bottom:none;}
+.compare-col.neg .col-head{background:rgba(139,69,245,0.12);color:var(--violet);border:1px solid rgba(139,69,245,0.22);border-bottom:none;}
+.compare-items{
+  border:1px solid;border-top:none;border-radius:0 0 var(--r) var(--r);
+  padding:4px 0;
+}
+.compare-col.pos .compare-items{border-color:rgba(0,255,136,0.22);}
+.compare-col.neg .compare-items{border-color:rgba(139,69,245,0.22);}
+.compare-item{
+  display:flex;align-items:flex-start;gap:10px;
+  padding:10px 16px;font-size:clamp(0.8rem,0.95vw,0.92rem);
+  color:#ccd4d0;line-height:1.55;
+  border-bottom:1px solid rgba(255,255,255,0.04);
+  transition:background 0.2s;
+  cursor:default;
+}
+.compare-item:last-child{border-bottom:none;}
+.compare-item:hover{background:rgba(255,255,255,0.025);}
+.compare-col.pos .compare-item::before{content:'✓';color:var(--em);font-weight:700;flex-shrink:0;font-size:0.85rem;margin-top:1px;}
+.compare-col.neg .compare-item::before{content:'✗';color:var(--violet);font-weight:700;flex-shrink:0;font-size:0.85rem;margin-top:1px;}
+
+/* ===== LEGAL CARDS ===== */
+.legal-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:16px;width:100%;max-width:1060px;}
+.legal-card{
+  background:var(--glass-bg);border:1px solid var(--glass-border);
+  border-radius:var(--r);padding:clamp(16px,2vw,24px);
+  backdrop-filter:blur(12px);
+  transition:all 0.3s;
+}
+.legal-card:hover{border-color:rgba(0,255,136,0.38);transform:translateY(-3px);}
+.legal-country{font-family:var(--font-mono);font-size:0.7rem;letter-spacing:0.18em;text-transform:uppercase;color:var(--em);display:block;margin-bottom:8px;}
+.legal-status{
+  display:inline-flex;align-items:center;gap:6px;
+  font-family:var(--font-mono);font-size:0.7rem;
+  padding:3px 10px;border-radius:999px;margin-bottom:12px;
+}
+.legal-status.banned{background:rgba(255,68,102,0.12);color:#ff4466;border:1px solid rgba(255,68,102,0.25);}
+.legal-status.allowed{background:rgba(0,255,136,0.1);color:var(--em);border:1px solid rgba(0,255,136,0.22);}
+.legal-status.partial{background:rgba(255,200,0,0.1);color:#ffc800;border:1px solid rgba(255,200,0,0.22);}
+.legal-card p{font-size:clamp(0.78rem,0.95vw,0.9rem);color:var(--grey1);line-height:1.65;}
+
+/* ===== QUOTE SLIDE ===== */
+.slide.quote-lay{align-items:center;text-align:center;justify-content:center;}
+.mega-quote{
+  font-family:var(--font-quote);font-style:italic;
+  font-size:clamp(1.6rem,4vw,3.4rem);
+  line-height:1.25;color:var(--white);max-width:900px;
+  text-shadow:0 0 60px rgba(0,255,136,0.2);
+  margin-bottom:2rem;
+}
+.mega-quote .hi{color:var(--em);}
+.mega-quote .violet{color:var(--violet);}
+
+/* ===== INTERACTIVE DNA SVG ANIM ===== */
+.dna-wrap{display:flex;justify-content:center;align-items:center;}
+.dna-wrap svg .base{animation:dna-pulse 2s ease-in-out infinite alternate;}
+@keyframes dna-pulse{from{opacity:0.3;}to{opacity:0.85;}}
+
+/* ===== PROCESS DIAGRAM (horizontal flow) ===== */
+.flow{display:flex;align-items:flex-start;gap:0;width:100%;max-width:1100px;overflow-x:auto;padding-bottom:8px;}
+.flow::-webkit-scrollbar{height:4px;}
+.flow::-webkit-scrollbar-track{background:rgba(255,255,255,0.04);border-radius:2px;}
+.flow::-webkit-scrollbar-thumb{background:var(--em-dim);border-radius:2px;}
+.flow-step{
+  display:flex;flex-direction:column;align-items:center;
+  min-width:120px;max-width:160px;flex:1;
+  cursor:default;
+}
+.flow-step .fs-icon{
+  width:56px;height:56px;border-radius:50%;
+  border:1.5px solid var(--glass-border);
+  background:var(--glass-bg);
+  display:flex;align-items:center;justify-content:center;
+  font-size:1.4rem;
+  margin-bottom:10px;
+  transition:all 0.3s;box-shadow:0 4px 20px rgba(0,0,0,0.3);
+  position:relative;z-index:1;
+}
+.flow-step:hover .fs-icon{border-color:var(--em);box-shadow:0 0 20px rgba(0,255,136,0.35);transform:scale(1.1);}
+.flow-step .fs-n{font-family:var(--font-mono);font-size:0.65rem;color:var(--em);letter-spacing:0.08em;margin-bottom:4px;}
+.flow-step .fs-label{font-size:0.8rem;text-align:center;color:var(--grey1);line-height:1.45;padding:0 4px;}
+.flow-step .fs-detail{font-size:0.72rem;text-align:center;color:var(--grey2);line-height:1.4;padding:0 4px;margin-top:4px;max-height:0;overflow:hidden;transition:max-height 0.4s;}
+.flow-step:hover .fs-detail{max-height:80px;}
+.flow-arrow{
+  display:flex;align-items:center;padding-top:22px;color:rgba(0,255,136,0.35);
+  font-size:1.1rem;flex-shrink:0;
+}
+
+/* ===== ETHICS TAGS ===== */
+.ethics-cloud{display:flex;flex-wrap:wrap;gap:10px;margin-top:16px;}
+.etag{
+  font-family:var(--font-mono);font-size:0.72rem;letter-spacing:0.08em;
+  padding:6px 14px;border-radius:999px;
+  border:1px solid;
+  cursor:default;transition:all 0.25s;
+}
+.etag:hover{transform:scale(1.06);}
+.etag.e1{border-color:rgba(0,255,136,0.3);color:var(--em);background:rgba(0,255,136,0.07);}
+.etag.e2{border-color:rgba(139,69,245,0.3);color:var(--violet);background:rgba(139,69,245,0.07);}
+.etag.e3{border-color:rgba(255,68,102,0.3);color:#ff4466;background:rgba(255,68,102,0.07);}
+.etag.e4{border-color:rgba(255,200,0,0.3);color:#ffc800;background:rgba(255,200,0,0.07);}
+
+/* ===== COVER-SPECIFIC ===== */
+.cover-wrap{display:flex;flex-direction:column;align-items:center;text-align:center;width:100%;max-width:900px;margin:0 auto;}
+.cover-tag{font-family:var(--font-mono);font-size:0.65rem;letter-spacing:0.4em;text-transform:uppercase;color:var(--em);opacity:0.8;margin-bottom:20px;}
+.cover-title{
+  font-family:var(--font-title);font-size:clamp(2.2rem,5.5vw,5rem);
+  font-weight:900;line-height:1.08;color:var(--white);letter-spacing:0.01em;
+  text-shadow:0 0 60px rgba(0,255,136,0.2),0 0 120px rgba(139,69,245,0.12);
+  margin-bottom:16px;
+}
+.cover-title span{color:var(--em);}
+.cover-sub{
+  font-family:var(--font-quote);font-style:italic;
+  font-size:clamp(1.1rem,2vw,1.7rem);color:var(--grey1);
+  margin-bottom:36px;max-width:660px;
+}
+.cover-divider{width:80px;height:1px;background:linear-gradient(90deg,transparent,var(--em),transparent);margin:0 auto 32px;}
+.cover-frankenstein{
+  font-family:var(--font-quote);font-style:italic;
+  font-size:clamp(1.2rem,2.2vw,1.8rem);color:rgba(255,255,255,0.7);
+  max-width:600px;margin-bottom:24px;line-height:1.4;
+}
+.cover-frankenstein .hi{color:var(--em);}
+.cover-note{font-family:var(--font-mono);font-size:0.65rem;color:var(--grey2);letter-spacing:0.15em;text-transform:uppercase;}
+
+/* ===== SVG DECORATORS ===== */
+.deco-svg{position:absolute;pointer-events:none;opacity:0.7;}
+
+/* ===== RESPONSIVE ===== */
+@media(max-width:900px){
+  .two-col{flex-direction:column;gap:clamp(16px,3vw,28px);}
+  .compare{grid-template-columns:1fr;}
+  .flow{padding-bottom:16px;}
+  #dots{display:none;}
+  #key-hint{display:none;}
+  .stat-grid{grid-template-columns:repeat(2,1fr);}
+}
+@media(max-width:600px){
+  h1.t{font-size:1.5rem;}
+  .cover-title{font-size:2rem;}
+  .mega-quote{font-size:1.4rem;}
+  .stat-grid{grid-template-columns:repeat(2,1fr);}
+  .legal-grid{grid-template-columns:1fr;}
+}
+@media(prefers-reduced-motion:reduce){
+  *{animation-duration:0.001ms!important;transition-duration:0.001ms!important;}
+}
+:focus-visible{outline:2px solid var(--em);outline-offset:3px;}
+</style>
+</head>
+<body>
+
+<!-- Ambient -->
+<div id="ambient">
+  <div class="amb-grad"></div>
+  <div class="scanlines"></div>
+  <div class="fog f1"></div>
+  <div class="fog f2"></div>
+  <div class="vignette"></div>
+  <div class="noise"></div>
+</div>
+<div id="lightning"></div>
+<div id="progress"></div>
+
+<!-- Top bar -->
+<div id="topbar">
+  <div class="tb-brand">Lab. <span>VII</span> · Biotecnologia</div>
+  <div class="tb-slide-name" id="slide-name"></div>
+</div>
+
+<!-- Side dots -->
+<div id="dots"></div>
+
+<!-- DECK -->
+<div id="deck">
+
+<!-- ═══ SLIDE 1 — CAPA ═══ -->
+<section class="slide quote-lay" data-label="Capa">
+  <!-- decorative SVG bolts -->
+  <svg class="deco-svg" style="top:8%;left:4%;width:clamp(40px,6vw,80px);opacity:0.22;" viewBox="0 0 40 90">
+    <polyline points="28,0 12,45 22,45 8,90" fill="none" stroke="#00ff88" stroke-width="2.5" stroke-linejoin="round"/>
+    <polyline points="28,0 12,45 22,45 8,90" fill="none" stroke="#00ff88" stroke-width="8" stroke-linejoin="round" opacity="0.08"/>
+  </svg>
+  <svg class="deco-svg" style="bottom:10%;right:5%;width:clamp(30px,4vw,60px);opacity:0.18;transform:scaleX(-1);" viewBox="0 0 40 90">
+    <polyline points="28,0 12,45 22,45 8,90" fill="none" stroke="#8b45f5" stroke-width="2.5" stroke-linejoin="round"/>
+  </svg>
+
+  <div class="cover-wrap">
+    <div class="cover-tag" style="opacity:0;animation:fade-in 0.7s 0.1s both;">Estudo de Biotecnologia Avançada</div>
+
+    <!-- DNA icon -->
+    <svg viewBox="0 0 80 40" style="width:clamp(60px,8vw,100px);margin-bottom:16px;opacity:0;animation:fade-in 0.7s 0.2s both;">
+      <path d="M10 20 Q40 5 70 20" stroke="#00ff88" stroke-width="2" fill="none"/>
+      <path d="M10 20 Q40 35 70 20" stroke="#8b45f5" stroke-width="2" fill="none"/>
+      <circle cx="10" cy="20" r="3" fill="#00ff88"/>
+      <circle cx="40" cy="9" r="2.5" fill="#00ff88" opacity="0.6"/>
+      <circle cx="40" cy="31" r="2.5" fill="#8b45f5" opacity="0.6"/>
+      <circle cx="70" cy="20" r="3" fill="#8b45f5"/>
+    </svg>
+
+    <h1 class="cover-title" style="opacity:0;animation:slide-up 0.8s 0.3s both;">Clonagem <span>Reprodutiva</span></h1>
+    <p class="cover-sub" style="opacity:0;animation:slide-up 0.8s 0.45s both;">Ciência, Ética e os Limites da Criação da Vida</p>
+    <div class="cover-divider" style="opacity:0;animation:fade-in 0.8s 0.6s both;"></div>
+    <p class="cover-frankenstein" style="opacity:0;animation:slide-up 0.8s 0.7s both;">"O homem não deveria <span class="hi">brincar de Deus</span>?"</p>
+    <p class="cover-note" style="opacity:0;animation:fade-in 0.8s 0.9s both;">Inspirado em Frankenstein · Mary Shelley · 1818</p>
+  </div>
+</section>
+
+<!-- ═══ SLIDE 2 — CONCEITO ═══ -->
+<section class="slide" data-label="Conceito">
+  <div class="eyebrow">01 — Conceito Fundamental</div>
+  <h1 class="t">O que é a <em>Clonagem Reprodutiva</em>?</h1>
+  <div class="body-wrap two-col">
+    <div class="c">
+      <p class="lead">A clonagem reprodutiva é uma técnica avançada da biotecnologia cujo objetivo é produzir um novo organismo <strong>geneticamente muito semelhante</strong> ao indivíduo que forneceu o material genético.</p>
+      <p class="lead">Diferente da reprodução sexuada, na qual há combinação do DNA de pai e mãe, a clonagem usa o núcleo de uma <strong>célula somática</strong> (qualquer célula não-gameta) para originar um novo ser.</p>
+      <p class="lead">Seu objetivo final é o <strong>nascimento de um novo indivíduo completo</strong> — diferindo da clonagem terapêutica, que produz apenas células ou tecidos para tratamentos médicos.</p>
+      <div class="card" style="margin-top:4px;">
+        <span class="card-label">⚠ Distinção importante</span>
+        <p>Clonagem reprodutiva ≠ clonagem terapêutica. A primeira visa gerar um organismo inteiro; a segunda visa gerar tecidos para medicina regenerativa.</p>
+      </div>
+    </div>
+    <div class="c narrow">
+      <ul class="facts">
+        <li><strong>Técnica central:</strong> Transferência Nuclear de Células Somáticas (TNCS).
+          <span class="note">O núcleo da célula doadora substitui o núcleo do óvulo receptor.</span></li>
+        <li><strong>DNA nuclear:</strong> O clone herda o DNA nuclear do doador.
+          <span class="note">Porém não é cópia idêntica — veja slide 7.</span></li>
+        <li><strong>Fecundação:</strong> Não ocorre união de gametas.
+          <span class="note">A reprodução é essencialmente assexuada.</span></li>
+        <li><strong>Princípio base:</strong> Toda célula somática contém o genoma completo do organismo.
+          <span class="note">Mesmo células diferenciadas guardam toda a informação genética.</span></li>
+      </ul>
+    </div>
+  </div>
+</section>
+
+<!-- ═══ SLIDE 3 — HISTÓRICO ═══ -->
+<section class="slide" data-label="Histórico">
+  <div class="eyebrow">02 — Histórico Científico</div>
+  <h1 class="t">A Ovelha <em>Dolly</em> e a Virada da Ciência</h1>
+  <div class="body-wrap two-col">
+    <div class="c wide">
+      <div class="timeline">
+        <div class="tl">
+          <span class="tl-year">DÉCADAS 1950–1980</span>
+          <h4>Era das células embrionárias</h4>
+          <p>Cientistas tentavam clonar animais usando apenas células embrionárias. A crença era de que células adultas diferenciadas haviam perdido permanentemente a capacidade de originar um organismo inteiro.</p>
+        </div>
+        <div class="tl">
+          <span class="tl-year">1996 — ROSLIN INSTITUTE · ESCÓCIA</span>
+          <h4>Nasce a ovelha Dolly</h4>
+          <p>Ian Wilmut e equipe clonaram Dolly utilizando o núcleo de uma célula da glândula mamária de uma ovelha adulta de 6 anos — primeira cópia de um mamífero adulto já produzida.</p>
+        </div>
+        <div class="tl">
+          <span class="tl-year">1997 — PUBLICAÇÃO</span>
+          <h4>Artigo em Nature choca o mundo</h4>
+          <p>O experimento demonstra que uma célula adulta diferenciada ainda contém todas as informações genéticas para formar um organismo completo. O conceito de "reprogramação celular" entra em cena.</p>
+        </div>
+        <div class="tl">
+          <span class="tl-year">1996–HOJE</span>
+          <h4>Expansão da técnica</h4>
+          <p>Gato (2001), rato (2002), cavalo (2003), cão (2005), lobo ártico (2022) e centenas de outras espécies foram clonadas com sucesso, expandindo aplicações em conservação e pecuária.</p>
+        </div>
+      </div>
+    </div>
+    <div class="c">
+      <div class="stat-grid">
+        <div class="stat"><span class="stat-val">277</span><div class="stat-label">óvulos utilizados no experimento Dolly</div></div>
+        <div class="stat"><span class="stat-val">29</span><div class="stat-label">embriões chegaram à fase adequada para implantação</div></div>
+        <div class="stat"><span class="stat-val">13</span><div class="stat-label">prenhezes estabelecidas na mãe substituta</div></div>
+        <div class="stat"><span class="stat-val">1</span><div class="stat-label">nascimento saudável — Dolly</div></div>
+      </div>
+      <div class="card" style="margin-top:16px;">
+        <span class="card-label">Taxa de sucesso</span>
+        <p>O experimento teve eficiência de <strong style="color:var(--em);">0,36%</strong>. Hoje, mesmo com avanços, a maioria das espécies mantém taxa inferior a <strong style="color:var(--em);">5%</strong>.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══ SLIDE 4 — PASSO A PASSO ═══ -->
+<section class="slide" data-label="Processo">
+  <div class="eyebrow">03 — Processo Passo a Passo</div>
+  <h1 class="t">Como Ocorre a <em>Clonagem Reprodutiva</em></h1>
+  <div class="body-wrap" style="width:100%;">
+    <div class="flow">
+      <div class="flow-step">
+        <div class="fs-icon">🧬</div>
+        <div class="fs-n">ETAPA 1</div>
+        <div class="fs-label">Escolha do doador genético</div>
+        <div class="fs-detail">Célula somática retirada da pele, músculo, fígado ou glândula mamária — 46 cromossomos em humanos.</div>
+      </div>
+      <div class="flow-arrow">›</div>
+      <div class="flow-step">
+        <div class="fs-icon">🥚</div>
+        <div class="fs-n">ETAPA 2</div>
+        <div class="fs-label">Obtenção do óvulo</div>
+        <div class="fs-detail">Óvulo de fêmea da mesma espécie. Rico em proteínas, RNA mensageiro e fatores de reprogramação.</div>
+      </div>
+      <div class="flow-arrow">›</div>
+      <div class="flow-step">
+        <div class="fs-icon">💉</div>
+        <div class="fs-n">ETAPA 3</div>
+        <div class="fs-label">Enucleação do óvulo</div>
+        <div class="fs-detail">Núcleo do óvulo é removido com micropipetas de alta precisão. Citoplasma e organelas permanecem.</div>
+      </div>
+      <div class="flow-arrow">›</div>
+      <div class="flow-step">
+        <div class="fs-icon">⚡</div>
+        <div class="fs-n">ETAPA 4</div>
+        <div class="fs-label">Transferência nuclear</div>
+        <div class="fs-detail">Núcleo somático inserido por microinjeção ou eletrofusão. O DNA do doador assume o controle.</div>
+      </div>
+      <div class="flow-arrow">›</div>
+      <div class="flow-step">
+        <div class="fs-icon">🔄</div>
+        <div class="fs-n">ETAPA 5</div>
+        <div class="fs-label">Reprogramação celular</div>
+        <div class="fs-detail">Proteínas do citoplasma "reiniciam" o núcleo adulto para estado embrionário. Etapa mais crítica.</div>
+      </div>
+      <div class="flow-arrow">›</div>
+      <div class="flow-step">
+        <div class="fs-icon">🌱</div>
+        <div class="fs-n">ETAPA 6–8</div>
+        <div class="fs-label">Ativação, desenvolvimento e implantação</div>
+        <div class="fs-detail">Choques elétricos ativam a mitose. Embrião progride até blastocisto e é implantado em mãe substituta.</div>
+      </div>
+      <div class="flow-arrow">›</div>
+      <div class="flow-step">
+        <div class="fs-icon">🐑</div>
+        <div class="fs-n">ETAPA 9</div>
+        <div class="fs-label">Gestação e nascimento</div>
+        <div class="fs-detail">Gestação normal, mas com risco elevado de aborto, alterações placentárias e problemas metabólicos.</div>
+      </div>
+    </div>
+    <p style="font-family:var(--font-mono);font-size:0.7rem;color:var(--grey2);margin-top:14px;letter-spacing:0.05em;">↑ Passe o cursor sobre cada etapa para mais detalhes</p>
+  </div>
+</section>
+
+<!-- ═══ SLIDE 5 — TNCS DETALHADO ═══ -->
+<section class="slide" data-label="TNCS">
+  <div class="eyebrow">04 — Técnica Central</div>
+  <h1 class="t">Transferência Nuclear de <em>Células Somáticas</em></h1>
+  <div class="body-wrap two-col">
+    <div class="c">
+      <p class="lead">O processo de TNCS depende de uma <strong>reprogramação epigenética</strong> profunda. O citoplasma do óvulo possui proteínas especiais que modificam o funcionamento do núcleo transplantado.</p>
+
+      <div class="steps" style="max-width:100%;">
+        <div class="step">
+          <div class="step-n">A</div>
+          <div class="step-body">
+            <strong>Microinjeção direta</strong>
+            <p>O núcleo é aspirado com uma micropipeta e injetado diretamente dentro do óvulo enucleado. Técnica de alta precisão, exige microscópio especializado.</p>
+            <span class="tag">Precisão cirúrgica</span>
+          </div>
+        </div>
+        <div class="step">
+          <div class="step-n">B</div>
+          <div class="step-body">
+            <strong>Eletrofusão celular</strong>
+            <p>A célula somática inteira é posicionada junto ao óvulo. Um pulso elétrico rompe as membranas celulares e as funde. O núcleo somático passa a controlar o óvulo.</p>
+            <span class="tag">Usada em bovinos e ovinos</span>
+          </div>
+        </div>
+        <div class="step">
+          <div class="step-n">C</div>
+          <div class="step-body">
+            <strong>Reprogramação do núcleo</strong>
+            <p>As proteínas do citoplasma desligam genes característicos da célula adulta, religam genes embrionários, reorganizam a cromatina e reiniciam o ciclo celular — como se a célula "esquecesse" seu passado.</p>
+            <span class="tag">Etapa mais crítica — maior causa de falhas</span>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="c narrow" style="display:flex;flex-direction:column;gap:14px;">
+      <div class="card">
+        <span class="card-label">🔬 O que ocorre no núcleo</span>
+        <p>Genes da célula adulta são <strong style="color:var(--violet);">silenciados</strong>. Genes do estado embrionário são <strong style="color:var(--em);">ativados</strong>. A cromatina é reestruturada. O ciclo celular é reiniciado do ponto zero.</p>
+      </div>
+      <div class="card">
+        <span class="card-label">⚠ Principal desafio</span>
+        <p>A reprogramação incompleta é a maior causa de falhas. Quando genes adultos não são totalmente desligados, o embrião se desenvolve de forma anormal ou para de crescer.</p>
+      </div>
+      <div class="card">
+        <span class="card-label">🧪 Curiosidade técnica</span>
+        <p>O citoplasma do óvulo contém moléculas de RNA mensageiro, enzimas e fatores de transcrição essenciais que nunca poderiam ser reproduzidos artificialmente em laboratório até hoje.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══ SLIDE 6 — DESENVOLVIMENTO EMBRIONÁRIO ═══ -->
+<section class="slide" data-label="Desenvolvimento">
+  <div class="eyebrow">05 — Biologia do Desenvolvimento</div>
+  <h1 class="t">Desenvolvimento Embrionário e <em>Implantação</em></h1>
+  <div class="body-wrap two-col">
+    <div class="c">
+      <div class="timeline">
+        <div class="tl">
+          <span class="tl-year">FASE 1</span>
+          <h4>Zigoto — 1 célula</h4>
+          <p>Após a ativação por choque elétrico ou estímulo químico, o óvulo reconstrituído inicia seu desenvolvimento como a primeira célula do novo organismo.</p>
+        </div>
+        <div class="tl">
+          <span class="tl-year">FASE 2</span>
+          <h4>Clivagem — 2 a 16 células</h4>
+          <p>Sucessivas divisões celulares mitóticas aumentam o número de células. Cada célula filha recebe cópia idêntica do DNA. O tamanho total não aumenta — as células ficam menores.</p>
+        </div>
+        <div class="tl">
+          <span class="tl-year">FASE 3</span>
+          <h4>Mórula → Blástula</h4>
+          <p>Forma-se uma esfera compacta (mórula) que depois se organiza em torno de uma cavidade central (blástula). Células começam a se diferenciar funcionalmente.</p>
+        </div>
+        <div class="tl">
+          <span class="tl-year">FASE 4 — CRÍTICA</span>
+          <h4>Blastocisto — seleção e implantação</h4>
+          <p>Diferenciação entre <strong style="color:var(--em);">massa celular interna</strong> (que originará o embrião) e <strong style="color:var(--violet);">trofoblasto</strong> (que formará a placenta). Apenas blastocistos saudáveis são implantados.</p>
+        </div>
+        <div class="tl">
+          <span class="tl-year">FASE 5</span>
+          <h4>Gestação e riscos</h4>
+          <p>Mãe substituta não transmite DNA nuclear. Porém gestações de clones têm maior risco de: abortos, crescimento fetal exagerado (LOS), problemas cardíacos, pulmonares e metabólicos.</p>
+        </div>
+      </div>
+    </div>
+    <div class="c narrow">
+      <div class="stat-grid" style="grid-template-columns:1fr 1fr;">
+        <div class="stat"><span class="stat-val">~7</span><div class="stat-label">dias para formar o blastocisto</div></div>
+        <div class="stat"><span class="stat-val">&lt;5%</span><div class="stat-label">taxa média de sucesso geral</div></div>
+      </div>
+      <div class="card" style="margin-top:14px;">
+        <span class="card-label">🏥 Síndrome do Bezerro Grande (LOS)</span>
+        <p>Um dos problemas mais comuns em clones de bovinos: o feto cresce exageradamente durante a gestação, causando dificuldades no parto e riscos para a mãe substituta.</p>
+      </div>
+      <div class="card">
+        <span class="card-label">💡 Por que tanta perda?</span>
+        <p>A maioria das falhas ocorre por reprogramação incompleta. Genes que deveriam estar silenciados continuam ativos, criando padrões de expressão incompatíveis com o desenvolvimento embrionário normal.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══ SLIDE 7 — POR QUE NÃO É IDÊNTICO ═══ -->
+<section class="slide" data-label="Identidade Genética">
+  <div class="eyebrow">06 — Genética e Identidade</div>
+  <h1 class="t">Por que o Clone <em>Não É</em> Idêntico ao Doador?</h1>
+  <div class="body-wrap two-col">
+    <div class="c">
+      <ul class="facts" style="gap:0;">
+        <li>
+          <strong>🔋 DNA Mitocondrial (mtDNA)</strong>
+          <span class="note">As mitocôndrias do óvulo receptor permanecem intactas após a enucleação. O clone herda o DNA mitocondrial da doadora do óvulo, não do doador do núcleo — gerando uma fonte genética diferente para a produção de energia celular.</span>
+        </li>
+        <li>
+          <strong>🧬 Epigenética — marcas químicas no DNA</strong>
+          <span class="note">Durante a vida, grupos metil e acetil se depositam sobre o DNA, controlando quais genes são ativados. Essas marcas não são totalmente apagadas na clonagem — o clone pode "herdar" padrões de expressão gênica do doador adulto.</span>
+        </li>
+        <li>
+          <strong>🌍 Ambiente — o papel do desenvolvimento</strong>
+          <span class="note">Nutrição intrauterina, hormônios, temperatura corporal, infecções e experiências pós-natal moldam o fenótipo. Mesmo gêmeos idênticos apresentam diferenças notáveis — com clones o efeito é ainda maior.</span>
+        </li>
+        <li>
+          <strong>🕐 Diferença de tempo e contexto</strong>
+          <span class="note">O clone nasce anos ou décadas depois do doador. O mundo em que se desenvolve é diferente — isso influencia comportamento, aparência, saúde e personalidade de formas imprevisíveis.</span>
+        </li>
+      </ul>
+    </div>
+    <div class="c narrow" style="display:flex;flex-direction:column;gap:14px;">
+      <div class="card">
+        <span class="card-label">🐱 Caso CC — o primeiro gato clonado (2001)</span>
+        <p>CC ("Copy Cat") foi clonada de Rainbow, uma gata tricolor. Apesar do mesmo DNA nuclear, CC nasceu com pelagem completamente diferente — resultado de inativação aleatória do cromossomo X durante o desenvolvimento embrionário.</p>
+      </div>
+      <div class="card">
+        <span class="card-label">📐 Analogia útil</span>
+        <p>Imagine o DNA como a <strong style="color:var(--em);">partitura de uma sinfonia</strong>. Dois pianistas podem tocar a mesma partitura e produzir interpretações completamente diferentes dependendo de quem são, onde cresceram e como estão no momento da execução.</p>
+      </div>
+      <div class="card">
+        <span class="card-label">🧠 Personalidade e comportamento</span>
+        <p>Traços psicológicos são profundamente influenciados pelo ambiente. Um clone humano hipotético de Einstein não seria necessariamente um gênio — a inteligência envolve genes E experiências únicas de vida.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══ SLIDE 8 — VANTAGENS ═══ -->
+<section class="slide" data-label="Aplicações">
+  <div class="eyebrow">07 — Aplicações e Vantagens</div>
+  <h1 class="t">Para que Serve a <em>Clonagem Reprodutiva</em>?</h1>
+  <div class="body-wrap two-col">
+    <div class="c">
+      <ul class="facts">
+        <li>
+          <strong>🐄 Pecuária de alta genética</strong>
+          <span class="note">Multiplicação de animais com características excepcionais — alta produção de leite, resistência a doenças, rendimento de carne. Permite preservar linhagens valiosas sem depender de reprodução natural.</span>
+        </li>
+        <li>
+          <strong>🌿 Conservação de espécies ameaçadas</strong>
+          <span class="note">Quando há material genético disponível (células criopreservadas), a clonagem pode ser usada para tentar recuperar espécies em risco de extinção. Casos: gato-selvagem africano, ferret-de-pés-negros (EUA).</span>
+        </li>
+        <li>
+          <strong>🔬 Pesquisa biomédica</strong>
+          <span class="note">Clones geneticamente uniformes permitem estudar efeitos de medicamentos ou doenças com muito menos variáveis. Resultados mais precisos e reproduzíveis em ensaios laboratoriais.</span>
+        </li>
+        <li>
+          <strong>🐾 Conservação de animais de estimação</strong>
+          <span class="note">Empresas como a Sinogene (China) já oferecem serviços comerciais de clonagem de cães e gatos. Controverso eticamente, mas tecnicamente possível.</span>
+        </li>
+        <li>
+          <strong>🧫 Produção de órgãos para transplante (futuro)</strong>
+          <span class="note">Animais geneticamente modificados poderiam servir como modelos para xenotransplante. A clonagem pode ser combinada com edição genômica (CRISPR) para personalizar órgãos doadores.</span>
+        </li>
+      </ul>
+    </div>
+    <div class="c narrow">
+      <div class="card">
+        <span class="card-label">🐺 Lobo ártico clonado (2022)</span>
+        <p>Maya, uma fêmea de lobo ártico, foi clonada com sucesso pela empresa Sinogene em parceria com o governo chinês — primeiro lobo ártico clonado da história, abrindo caminho para a clonagem de espécies selvagens ameaçadas.</p>
+      </div>
+      <div class="card">
+        <span class="card-label">🐂 Caso empresarial — Viagen</span>
+        <p>A empresa americana ViaGen Pets & Equine clona cavalos de corrida e cães de estimação desde 2015. Clones de cavalos campeões já competiram em torneios internacionais de polo.</p>
+      </div>
+      <div class="card">
+        <span class="card-label">💊 Modelos para doenças</span>
+        <p>Porcos e macacos clonados são usados para modelar doenças humanas como Alzheimer, diabetes e Parkinson — animais com alterações genéticas idênticas tornam os experimentos mais confiáveis.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══ SLIDE 9 — DESVANTAGENS ═══ -->
+<section class="slide" data-label="Limitações">
+  <div class="eyebrow">08 — Limitações e Riscos</div>
+  <h1 class="t">Desvantagens e <em>Limitações Técnicas</em></h1>
+  <div class="body-wrap" style="width:100%;max-width:1100px;">
+    <div class="compare">
+      <div class="compare-col pos">
+        <div class="col-head">Limitações Técnicas</div>
+        <div class="compare-items">
+          <div class="compare-item">Baixa eficiência global — taxa inferior a 5% na maioria das espécies, exigindo dezenas ou centenas de tentativas para 1 nascimento.</div>
+          <div class="compare-item">Alto custo operacional — equipamentos de precisão, mão-de-obra especializada e infraestrutura de laboratório tornam o processo caro e inacessível em larga escala.</div>
+          <div class="compare-item">Grande número de óvulos necessários — implica coleta hormonal intensa das fêmeas doadoras, processo invasivo e estressante.</div>
+          <div class="compare-item">Necessidade de muitas mães substitutas para tentar atingir um único nascimento bem-sucedido.</div>
+          <div class="compare-item">Reprogramação epigenética incompleta como principal gargalo técnico ainda sem solução definitiva.</div>
+        </div>
+      </div>
+      <div class="compare-col neg">
+        <div class="col-head">Riscos Biológicos</div>
+        <div class="compare-items">
+          <div class="compare-item">Envelhecimento precoce — Dolly foi sacrificada aos 6 anos (metade da expectativa normal) por artrite e doenças pulmonares graves, possivelmente ligadas ao DNA de uma doadora adulta.</div>
+          <div class="compare-item">Síndrome LOS (Large Offspring Syndrome) — crescimento fetal exagerado em bovinos e ovinos, causando partos difíceis e risco de vida para a mãe substituta.</div>
+          <div class="compare-item">Má formação de órgãos — rins, coração e pulmões podem se desenvolver anormalmente devido a erros de reprogramação gênica.</div>
+          <div class="compare-item">Alta taxa de abortos espontâneos e perdas embrionárias durante a gestação, mesmo após implantação bem-sucedida.</div>
+          <div class="compare-item">Alterações metabólicas e imunológicas em animais nascidos que podem reduzir qualidade de vida e longevidade.</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══ SLIDE 10 — ÉTICA ═══ -->
+<section class="slide" data-label="Aspectos Éticos">
+  <div class="eyebrow">09 — Dilemas Éticos</div>
+  <h1 class="t">Aspectos <em>Éticos</em> da Clonagem</h1>
+  <div class="body-wrap two-col">
+    <div class="c">
+      <p class="lead">A clonagem reprodutiva levanta debates filosóficos, religiosos e científicos sobre <strong>os limites do que a ciência deve fazer</strong> — não apenas sobre o que ela pode fazer.</p>
+
+      <div class="card">
+        <span class="card-label">🐾 Bem-estar animal</span>
+        <p>O grande número de embriões descartados, gestações com complicações e animais que nascem com problemas de saúde levanta questões sérias sobre sofrimento. Centenas de organismos são sacrificados para produzir um único clone viável.</p>
+      </div>
+      <div class="card">
+        <span class="card-label">👤 Identidade e autonomia do clone</span>
+        <p>Um clone humano teria sua identidade definida antes mesmo de nascer — carregaria o peso das expectativas sobre o doador. Isso viola o princípio de autodeterminação e de um futuro em aberto ("open future").</p>
+      </div>
+      <div class="card">
+        <span class="card-label">💰 Exploração comercial</span>
+        <p>O risco de clonagem por encomenda — para replicar seres humanos excepcionais, esportistas, artistas ou para interesses econômicos — transformaria a vida humana em produto.</p>
+      </div>
+    </div>
+    <div class="c narrow">
+      <p style="font-family:var(--font-mono);font-size:0.72rem;color:var(--grey2);letter-spacing:0.1em;text-transform:uppercase;margin-bottom:12px;">Temas em debate</p>
+      <div class="ethics-cloud">
+        <span class="etag e1">Bem-estar animal</span>
+        <span class="etag e2">Identidade pessoal</span>
+        <span class="etag e3">Riscos médicos</span>
+        <span class="etag e4">Commodificação da vida</span>
+        <span class="etag e1">Diversidade genética</span>
+        <span class="etag e2">Direitos do clone</span>
+        <span class="etag e3">Redução da biodiversidade</span>
+        <span class="etag e4">Eugenismo</span>
+        <span class="etag e1">Autonomia reprodutiva</span>
+        <span class="etag e2">Responsabilidade científica</span>
+        <span class="etag e3">Poder sobre a vida</span>
+        <span class="etag e4">Impacto social</span>
+      </div>
+      <div class="card" style="margin-top:16px;">
+        <span class="card-label">📖 Referência — Frankenstein</span>
+        <p>Mary Shelley antecipou em 1818 o dilema: a criatura de Frankenstein não pediu para existir. Quem criou, assumiu responsabilidade — mas a abandonou. A ficção científica frequentemente precede o debate ético real.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══ SLIDE 11 — LEGISLAÇÃO ═══ -->
+<section class="slide" data-label="Legislação">
+  <div class="eyebrow">10 — Marco Legal</div>
+  <h1 class="t">Legislação no <em>Brasil</em> e no Mundo</h1>
+  <div class="body-wrap" style="width:100%;max-width:1100px;">
+    <div class="legal-grid">
+      <div class="legal-card">
+        <span class="legal-country">🇧🇷 Brasil</span>
+        <div class="legal-status banned">● Proibida (humanos)</div>
+        <p>Lei de Biossegurança (Lei nº 11.105/2005) proíbe expressamente a clonagem reprodutiva humana. A técnica é permitida em pesquisa animal e pecuária, respeitando normas éticas e de bem-estar animal do CONCEA.</p>
+      </div>
+      <div class="legal-card">
+        <span class="legal-country">🇺🇸 Estados Unidos</span>
+        <div class="legal-status partial">● Regulação parcial</div>
+        <p>Não há lei federal específica proibindo a clonagem humana, mas a FDA exige aprovação prévia. Vários estados têm leis próprias de proibição. Clonagem animal é amplamente praticada comercialmente.</p>
+      </div>
+      <div class="legal-card">
+        <span class="legal-country">🇺🇳 ONU — Declaração 2005</span>
+        <div class="legal-status banned">● Rejeição global</div>
+        <p>A Declaração das Nações Unidas sobre Clonagem Humana (2005) pede a todos os países que proíbam todas as formas de clonagem humana, incluindo a reprodutiva, por incompatibilidade com a dignidade humana.</p>
+      </div>
+      <div class="legal-card">
+        <span class="legal-country">🇪🇺 União Europeia</span>
+        <div class="legal-status banned">● Proibida</div>
+        <p>A Carta dos Direitos Fundamentais da UE (Art. 3) e a Convenção de Oviedo proíbem a clonagem reprodutiva humana. Clonagem terapêutica é tratada país a país com regulações distintas.</p>
+      </div>
+      <div class="legal-card">
+        <span class="legal-country">🇨🇳 China</span>
+        <div class="legal-status partial">● Caso He Jiankui</div>
+        <p>Embora a lei proíba a clonagem humana, o caso He Jiankui (2018) — bebês editadas geneticamente com CRISPR — mostrou que a regulação nem sempre é aplicada. A clonagem animal é líder mundial.</p>
+      </div>
+      <div class="legal-card">
+        <span class="legal-country">🌍 Maioria dos países</span>
+        <div class="legal-status banned">● Proibição geral</div>
+        <p>Mais de 50 países possuem legislação explícita proibindo a clonagem reprodutiva humana. Os principais motivos são os riscos científicos ainda presentes e as questões éticas sobre dignidade e identidade humana.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══ SLIDE 12 — CONCLUSÃO ═══ -->
+<section class="slide quote-lay" data-label="Conclusão">
+  <svg class="deco-svg" style="top:6%;right:6%;width:clamp(50px,8vw,120px);opacity:0.15;" viewBox="0 0 60 120">
+    <path d="M30 0 Q5 30 30 60 Q55 90 30 120" stroke="#00ff88" stroke-width="2" fill="none"/>
+    <path d="M30 0 Q55 30 30 60 Q5 90 30 120" stroke="#8b45f5" stroke-width="2" fill="none"/>
+    <line x1="12" y1="18" x2="48" y2="18" stroke="#00ff88" stroke-width="1" opacity="0.4"/>
+    <line x1="9" y1="42" x2="51" y2="42" stroke="#00ff88" stroke-width="1" opacity="0.4"/>
+    <line x1="12" y1="66" x2="48" y2="66" stroke="#8b45f5" stroke-width="1" opacity="0.4"/>
+    <line x1="9" y1="90" x2="51" y2="90" stroke="#8b45f5" stroke-width="1" opacity="0.4"/>
+    <line x1="12" y1="114" x2="48" y2="114" stroke="#00ff88" stroke-width="1" opacity="0.4"/>
+  </svg>
+
+  <div style="max-width:860px;text-align:center;">
+    <div class="eyebrow" style="justify-content:center;opacity:0;animation:fade-in 0.6s 0.1s both;">12 — Reflexão Final</div>
+    <p class="mega-quote" style="opacity:0;animation:slide-up 0.8s 0.25s both;">
+      "A ciência nos mostra o que é <span class="hi">possível</span>.<br>A ética nos lembra o que é <span class="violet">responsável</span>."
+    </p>
+    <div class="cover-divider" style="opacity:0;animation:fade-in 0.6s 0.5s both;"></div>
+    <p class="sub" style="text-align:center;max-width:700px;margin:0 auto 28px;opacity:0;animation:slide-up 0.7s 0.6s both;">
+      A clonagem reprodutiva prova que o núcleo de uma célula adulta pode ser reprogramado para originar a vida — um feito extraordinário da biotecnologia moderna. Mas sua baixa eficiência, altos custos, riscos biológicos e profundos dilemas éticos mantêm seu uso restrito à pesquisa científica, conservação de espécies e pecuária.
+    </p>
+    <p class="sub" style="text-align:center;max-width:700px;margin:0 auto 36px;font-style:normal;font-family:var(--font-body);font-size:clamp(0.88rem,1.1vw,1rem);color:var(--grey2);opacity:0;animation:slide-up 0.7s 0.75s both;">
+      A clonagem reprodutiva humana permanece proibida na maioria dos países — e o debate sobre seus limites morais está longe de se encerrar.
+    </p>
+    <h1 class="t" style="text-align:center;font-size:clamp(1.4rem,2.5vw,2rem);margin-bottom:6px;opacity:0;animation:slide-up 0.7s 0.9s both;">Obrigado pela atenção.</h1>
+    <p style="font-family:var(--font-mono);font-size:0.65rem;color:var(--grey2);letter-spacing:0.2em;text-transform:uppercase;opacity:0;animation:fade-in 0.7s 1.1s both;">Biotecnologia Avançada · Clonagem Reprodutiva · 2024</p>
+  </div>
+</section>
+
+</div><!-- /deck -->
+
+<!-- Bottom nav -->
+<div id="nav">
+  <button class="nbtn" id="prevBtn" aria-label="Anterior">&#8592;</button>
+  <div id="ctr"><b>01</b> / 12</div>
+  <button class="nbtn" id="nextBtn" aria-label="Próximo">&#8594;</button>
+</div>
+<div id="key-hint">← → navegar &nbsp;·&nbsp; F tela cheia</div>
+
+<script>
+(function(){
+  /* ─── STATE ─── */
+  const slides = Array.from(document.querySelectorAll('.slide'));
+  const TOTAL = slides.length;
+  let cur = 0, busy = false;
+
+  /* ─── ELEMENTS ─── */
+  const progress  = document.getElementById('progress');
+  const prevBtn   = document.getElementById('prevBtn');
+  const nextBtn   = document.getElementById('nextBtn');
+  const ctrEl     = document.getElementById('ctr');
+  const dotsWrap  = document.getElementById('dots');
+  const ltng      = document.getElementById('lightning');
+  const slideName = document.getElementById('slide-name');
+
+  /* ─── BUILD DOTS ─── */
+  slides.forEach((s,i)=>{
+    const d = document.createElement('div');
+    d.className='dot'+(i===0?' on':'');
+    d.innerHTML='<span class="dot-tip">'+(s.dataset.label||'Slide '+(i+1))+'</span>';
+    d.addEventListener('click',()=>goTo(i));
+    dotsWrap.appendChild(d);
+  });
+  const dots = Array.from(dotsWrap.children);
+
+  /* ─── RENDER ─── */
+  function pad(n){return n<10?'0'+n:String(n);}
+
+  function render(){
+    dots.forEach((d,i)=>d.classList.toggle('on',i===cur));
+    ctrEl.innerHTML='<b>'+pad(cur+1)+'</b> / '+pad(TOTAL);
+    progress.style.width=((cur+1)/TOTAL*100)+'%';
+    prevBtn.disabled = cur===0;
+    nextBtn.disabled = cur===TOTAL-1;
+    slideName.textContent = slides[cur].dataset.label || '';
+  }
+
+  /* ─── TRANSITION ─── */
+  function goTo(idx){
+    if(idx<0||idx>=TOTAL||idx===cur||busy) return;
+    busy=true;
+    const leaving = slides[cur];
+    const entering= slides[idx];
+    cur=idx;
+    render();
+
+    /* leave */
+    leaving.classList.add('s-leave-from');
+    void leaving.offsetWidth;
+    leaving.classList.add('s-leave-active');
+
+    leaving.addEventListener('transitionend', function h(){
+      leaving.removeEventListener('transitionend',h);
+      leaving.classList.remove('s-leave-from','s-leave-active');
+      leaving.style.visibility='hidden';
+    },{once:true});
+
+    /* enter */
+    entering.style.visibility='visible';
+    entering.classList.add('s-enter-from');
+    void entering.offsetWidth;
+    entering.classList.add('s-enter-active');
+
+    entering.addEventListener('transitionend', function h(){
+      entering.removeEventListener('transitionend',h);
+      entering.classList.remove('s-enter-from','s-enter-active');
+      busy=false;
+    },{once:true});
+
+    /* re-trigger child animations */
+    entering.querySelectorAll('[style*="animation"]').forEach(el=>{
+      el.style.animationPlayState='paused';
+      void el.offsetWidth;
+      el.style.animationPlayState='running';
+    });
+
+    mayLightning();
+  }
+
+  function next(){ goTo(cur+1); }
+  function prev(){ goTo(cur-1); }
+
+  /* ─── INPUT ─── */
+  prevBtn.addEventListener('click',prev);
+  nextBtn.addEventListener('click',next);
+
+  window.addEventListener('keydown',e=>{
+    if(['ArrowRight','ArrowDown',' ','PageDown'].includes(e.key)){e.preventDefault();next();}
+    else if(['ArrowLeft','ArrowUp','PageUp'].includes(e.key)){e.preventDefault();prev();}
+    else if(e.key==='Home'){goTo(0);}
+    else if(e.key==='End'){goTo(TOTAL-1);}
+    else if(e.key.toLowerCase()==='f'){toggleFS();}
+  });
+
+  let tx=0;
+  document.addEventListener('touchstart',e=>{tx=e.touches[0].clientX;},{passive:true});
+  document.addEventListener('touchend',e=>{
+    const dx=e.changedTouches[0].clientX-tx;
+    if(Math.abs(dx)>50){dx<0?next():prev();}
+  },{passive:true});
+
+  /* ─── FULLSCREEN ─── */
+  function toggleFS(){
+    if(!document.fullscreenElement) document.documentElement.requestFullscreen().catch(()=>{});
+    else document.exitFullscreen();
+  }
+
+  /* ─── LIGHTNING ─── */
+  function mayLightning(){
+    if(Math.random()<0.55){
+      ltng.classList.remove('zap');
+      void ltng.offsetWidth;
+      ltng.classList.add('zap');
+    }
+  }
+  setInterval(()=>{if(Math.random()<0.12)mayLightning();},9000);
+
+  /* ─── SPARKS ─── */
+  function spark(){
+    const s=document.createElement('div');
+    s.className='spark';
+    const sz=1.5+Math.random()*3;
+    const hue=Math.random()<0.7?'#00ff88':'#8b45f5';
+    s.style.cssText=`
+      width:${sz}px;height:${sz}px;
+      left:${Math.random()*100}vw;
+      background:${hue};
+      box-shadow:0 0 6px 2px ${hue};
+      --drift:${(Math.random()-0.5)*60}px;
+      animation-duration:${10+Math.random()*12}s;
+    `;
+    document.body.appendChild(s);
+    s.addEventListener('animationend',()=>s.remove());
+  }
+  setInterval(spark,1000);
+  for(let i=0;i<8;i++) setTimeout(spark,i*200);
+
+  /* ─── PARALLAX FOG ─── */
+  const fogs=document.querySelectorAll('.fog');
+  window.addEventListener('mousemove',e=>{
+    const mx=(e.clientX/innerWidth-0.5)*20;
+    const my=(e.clientY/innerHeight-0.5)*20;
+    fogs.forEach((f,i)=>{
+      const m=i%2===0?1:-1;
+      f.style.transform=`translate(${mx*m*0.4}px,${my*m*0.3}px)`;
+    });
+  },{passive:true});
+
+  /* ─── INIT ─── */
+  slides[0].style.visibility='visible';
+  slides[0].classList.add('s-enter-active');
+  render();
+})();
+</script>
+</body>
+</html>
